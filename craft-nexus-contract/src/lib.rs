@@ -27987,9 +27987,3 @@ impl CraftNexusContract {
                 }
             }
         }
-
-        let mut i = 0;
-        loop {
-            if i >= buyer_next_counts.len() {
-                break;Sorry, something went wrong. Please try your request again.
-                
