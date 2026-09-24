@@ -4212,9 +4212,6 @@ impl OnboardingContract {
     /// - Contract not initialized
     /// - Caller is not platform admin
     pub fn set_escrow_contract(env: Env, contract_address: Address) {
-        // Issue #498 — load config read-only first, then require_auth,
-        // then extend TTL and write. This ordering ensures unauthorized
-        // callers cannot trigger any storage side-effects.
         let mut config: OnboardingConfig = env
             .storage()
             .persistent()
@@ -4223,10 +4220,16 @@ impl OnboardingContract {
 
         config.platform_admin.require_auth();
 
-        config.escrow_contract = Some(contract_address);
+        let previous = config.escrow_contract.clone();
+        config.escrow_contract = Some(contract_address.clone());
 
         env.storage().persistent().set(&DataKey::Config, &config);
         Self::extend_persistent(&env, &DataKey::Config);
+
+        env.events().publish(
+            (Symbol::new(&env, "ConfigUpdated"), Symbol::new(&env, "escrow_contract")),
+            (config.platform_admin.clone(), previous, Some(contract_address)),
+        );
     }
 
     /// Update the minimum thresholds used for automatic user verification (admin only).
@@ -4259,15 +4262,21 @@ impl OnboardingContract {
             .get(&DataKey::Config)
             .unwrap_or_else(|| env.panic_with_error(Error::NotInitialized));
 
-        // Auth check before any storage mutation (#422).
         config.platform_admin.require_auth();
 
         let mut config = config;
+        let old_min_escrow = config.min_escrow_count_for_verify;
+        let old_min_volume = config.min_volume_for_verify;
         config.min_escrow_count_for_verify = min_escrow_count;
         config.min_volume_for_verify = min_volume;
 
         env.storage().persistent().set(&DataKey::Config, &config);
         Self::extend_persistent(&env, &DataKey::Config);
+
+        env.events().publish(
+            (Symbol::new(&env, "ConfigUpdated"), Symbol::new(&env, "verification_thresholds")),
+            (config.platform_admin.clone(), old_min_escrow, old_min_volume, min_escrow_count, min_volume),
+        );
     }
 
     /// Enable or disable threshold-based automatic verification (admin only).
@@ -4299,10 +4308,16 @@ impl OnboardingContract {
             .unwrap_or_else(|| env.panic_with_error(Error::NotInitialized));
 
         config.platform_admin.require_auth();
+        let old_enabled = config.auto_verify_enabled;
         config.auto_verify_enabled = enabled;
 
         env.storage().persistent().set(&DataKey::Config, &config);
         Self::extend_persistent(&env, &DataKey::Config);
+
+        env.events().publish(
+            (Symbol::new(&env, "ConfigUpdated"), Symbol::new(&env, "auto_verify_enabled")),
+            (config.platform_admin.clone(), old_enabled, enabled),
+        );
     }
 
     /// Get activity metrics for a user.
@@ -4876,13 +4891,23 @@ impl OnboardingContract {
             .unwrap_or_else(|| env.panic_with_error(Error::NotInitialized));
         Self::extend_persistent(&env, &DataKey::Config);
 
-        // Authorization gate — must run before any state mutation so an
-        // unauthorized caller triggers a full transaction rollback (#41).
         config.platform_admin.require_auth();
 
+<<<<<<< HEAD
         // clear_verification_request is idempotent: only the first clear of a
         // pending request decrements VerificationQueueCount (#730).
         Self::clear_verification_request(&env, &user)
+=======
+        let was_pending = Self::is_verification_pending_internal(&env, &user);
+        Self::clear_verification_request(&env, &user);
+
+        env.events().publish(
+            (Symbol::new(&env, "admin_verification_cleared"),),
+            (config.platform_admin.clone(), user, was_pending),
+        );
+
+        was_pending
+>>>>>>> 55237e198ecd8297b7bc506eaeec7a1ad45c17ae
     }
 
     /// Get the full verification history for a user.
@@ -5323,6 +5348,11 @@ impl OnboardingContract {
             .persistent()
             .set(&DataKey::ReputationPolicy, &policy);
         Self::extend_persistent(&env, &DataKey::ReputationPolicy);
+
+        env.events().publish(
+            (Symbol::new(&env, "ConfigUpdated"), Symbol::new(&env, "reputation_policy")),
+            (config.platform_admin.clone(), policy),
+        );
     }
 
     /// Scheduled reputation decay application (Issue #1082).
@@ -5571,6 +5601,11 @@ impl OnboardingContract {
             .persistent()
             .set(&DataKey::UsernameChangeFee, &fee);
         Self::extend_persistent(&env, &DataKey::UsernameChangeFee);
+
+        env.events().publish(
+            (Symbol::new(&env, "ConfigUpdated"), Symbol::new(&env, "username_change_fee")),
+            (config.platform_admin.clone(), fee),
+        );
     }
 
     /// Set the token used to collect username change fees (admin only).
@@ -5614,6 +5649,11 @@ impl OnboardingContract {
             .persistent()
             .set(&DataKey::UsernameChangeFeeToken, &token);
         Self::extend_persistent(&env, &DataKey::UsernameChangeFeeToken);
+
+        env.events().publish(
+            (Symbol::new(&env, "ConfigUpdated"), Symbol::new(&env, "username_fee_token")),
+            (config.platform_admin.clone(), token),
+        );
     }
 
     /// Set the wallet that receives username change fees (admin only).
@@ -5649,8 +5689,6 @@ impl OnboardingContract {
     /// - Contract not initialized
     /// - Caller is not platform admin
     pub fn set_username_fee_wallet(env: Env, wallet: Address) {
-        // Issue #526 — same ordering as `set_username_fee_token`
-        // above: require_auth runs before any TTL extension or write.
         let config: OnboardingConfig = env
             .storage()
             .persistent()
@@ -5663,6 +5701,11 @@ impl OnboardingContract {
             .persistent()
             .set(&DataKey::UsernameChangeFeeWallet, &wallet);
         Self::extend_persistent(&env, &DataKey::UsernameChangeFeeWallet);
+
+        env.events().publish(
+            (Symbol::new(&env, "ConfigUpdated"), Symbol::new(&env, "username_fee_wallet")),
+            (config.platform_admin.clone(), wallet),
+        );
     }
 
     /// Get the current username change fee — Issue #114.
