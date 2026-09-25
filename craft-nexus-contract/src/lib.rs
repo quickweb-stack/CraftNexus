@@ -15786,48 +15786,6 @@ pub struct UpgradeApprovalState {
     pub approvals: Vec<Address>,
 }
 
-<<<<<<< HEAD
-/// Per-token fee configuration introduced for #239.
-///
-/// The legacy `FeeTokenIndex` storage held only a flat `Vec<Address>` of
-/// fee-receiving tokens, which forced any future multi-token fee model into a
-/// contract upgrade. This struct gives us a per-token slot keyed by
-/// `DataKey::FeeTokenConfig(token)` that can carry forward additional fields
-/// (e.g. custom_bps overrides, token-specific receivers) without touching the
-/// global storage shape — new fields can be appended as `Option<T>` and read
-/// with safe fallbacks.
-///
-/// # Fields
-///
-/// * `active` - Boolean flag indicating whether this token is currently active for
-///   platform fee collection. When false, the admin can disable a token without
-///   losing its accumulated totals, allowing history preservation while stopping
-///   future fee counting.
-///
-/// * `custom_fee_bps` - Optional custom fee basis points specific to this token.
-///   Reserved for a future multi-token fee mode; currently NOT consulted by
-///   `calculate_fee` to keep this change storage-only and avoid behavior changes.
-///   A follow-up issue will wire this into fee calculation once the storage shape
-///   stabilizes in production.
-///
-/// * `accumulated` - Total fees accumulated in this token, measured in stroops.
-///   Monotonically increasing counter that preserves fee history across
-///   activation/deactivation cycles.
-///
-/// # Storage Side-effects
-///
-/// - Stored persistently under `DataKey::FeeTokenConfig(token_address)` with
-///   TTL extension on reads to prevent premature archival.
-/// - Updates to this struct trigger config refresh in affected escrow operations
-///   to ensure correct fee calculations based on token status.
-///
-/// # Integration notes
-///
-/// Off-chain integrators should cache this struct keyed by token address and
-/// refresh on-demand when escrow operations reference new tokens. The `accumulated`
-/// field provides audit trail for fee reconciliation; timestamp context is
-/// available via escrow event logs.
-=======
 const TOTAL_FEES: Symbol = symbol_short!("TOT_FEES");
 
 const TTL_THRESHOLD: u32 = 10_000;
@@ -18664,14 +18622,6 @@ impl CraftNexusContract {
         caller: &Address,
         transition: DisputeTransition,
     ) -> Result<(), Error> {
-<<<<<<< HEAD
-        match transition {
-            DisputeTransition::Initiate
-            | DisputeTransition::SubmitEvidence
-            | DisputeTransition::Escalate
-            | DisputeTransition::ProposeRefund => {
-                if *caller != escrow.buyer && *caller != escrow.seller {
-=======
         if !Self::is_privileged_resolver(config, caller) {
             return Err(Error::Unauthorized);
         }
@@ -22245,7 +22195,6 @@ impl CraftNexusContract {
 
                 // Check authorization (buyer must match)
                 if escrow.buyer != authorized_address {
->>>>>>> 867344c7525c03c89db6e2269239d86e67ad05f3
                     return Err(Error::Unauthorized);
                 }
             }

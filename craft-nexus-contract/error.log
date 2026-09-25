@@ -1,0 +1,88 @@
+﻿cargo :    Compiling 
+craft-nexus-contract 
+v0.2.0 (C:\Users\ADMIN
+\Desktop\kweb-drips\Cr
+aftNexus\craft-nexus-c
+ontract)
+At line:1 char:83
++ ... \kweb-drips\Craf
+tNexus\craft-nexus-con
+tract"; cargo test 
+2>&1 | Out-F ...
++                     
+                      
+        
+~~~~~~~~~~~~~~~
+    + CategoryInfo    
+          : NotSpeci  
+  fied: (   Compili   
+ ng cr...nexus-con    
+tract):String) []    
+, RemoteException
+    + FullyQualifiedE 
+   rrorId : NativeCo  
+  mmandError
+ 
+error: this file 
+contains an unclosed 
+delimiter
+     --> 
+src\lib.rs:28058:3
+      |
+14559 | mod deactivate
+d_account_tests {
+      |               
+                - 
+unclosed delimiter
+...
+16779 | impl 
+CraftNexusContract {
+      |               
+          - unclosed 
+delimiter
+...
+17186 | impl 
+CraftNexusContract {
+      |               
+          - unclosed 
+delimiter
+...
+18666 |     ) -> 
+Result<(), Error> {
+      |               
+             - 
+unclosed delimiter
+18667 | <<<<<<< HEAD
+18668 |         match 
+transition {
+      |               
+           - unclosed 
+delimiter
+...
+22770 |     pub fn set
+_stake_cooldown(env: 
+Env, 
+cooldown_seconds: 
+u32) -> Result<(), 
+Error> {
+      |               
+                      
+                      
+                      
+    - this delimiter 
+might not be properly 
+closed...
+...
+28058 | }
+      | -^
+      | |
+      | ...as it 
+matches this but it 
+has different 
+indentation
+
+error: could not 
+compile `craft-nexus-c
+ontract` (lib test) 
+due to 1 previous 
+error
