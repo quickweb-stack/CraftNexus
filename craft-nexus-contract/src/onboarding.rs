@@ -4893,11 +4893,6 @@ impl OnboardingContract {
 
         config.platform_admin.require_auth();
 
-<<<<<<< HEAD
-        // clear_verification_request is idempotent: only the first clear of a
-        // pending request decrements VerificationQueueCount (#730).
-        Self::clear_verification_request(&env, &user)
-=======
         let was_pending = Self::is_verification_pending_internal(&env, &user);
         Self::clear_verification_request(&env, &user);
 
@@ -4907,7 +4902,6 @@ impl OnboardingContract {
         );
 
         was_pending
->>>>>>> 55237e198ecd8297b7bc506eaeec7a1ad45c17ae
     }
 
     /// Get the full verification history for a user.
